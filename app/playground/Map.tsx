@@ -5,9 +5,7 @@ import {
   CircleMarker,
   Popup,
   Polygon,
-  GeoJSON,
   ScaleControl,
-  TileLayer,
 } from "react-leaflet";
 import { CRS } from "leaflet";
 import useInterpolation from "../utils/algorithm";
@@ -30,8 +28,8 @@ export default function Map() {
   return (
     <MapContainer
       center={center.geometry.coordinates as [number, number]}
-      zoom={14}
-      style={{ height: "100vh" }}
+      zoom={8}
+      className="h-[calc(100vh-2.5rem)]"
       crs={CRS.Simple}
     >
       {polygons.features.map((feature, index) => {

@@ -88,7 +88,7 @@ function interpolateGrid(
 
 export const useInterpolation = (
   points: FeatureCollection<Point>,
-  cellSize = 0.01,
+  cellSize = 1,
   option: InterpolationOptions = {
     property: "z",
   }
