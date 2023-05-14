@@ -13,10 +13,9 @@ import { CRS } from "leaflet";
 import useInterpolation from "../utils/algorithm";
 import { geodata } from "../assets";
 import { centerMean } from "@turf/turf";
+import { useColorScale } from "../utils/colorbar";
 
 export default function Map() {
-  const redOptions = { color: "red" };
-
   const points = useMemo<[number, number, number][]>(() => {
     return geodata.features.map((item) =>
       item.geometry.coordinates.map((x) => x)
@@ -24,6 +23,9 @@ export default function Map() {
   }, []);
   const center = useMemo(() => centerMean(geodata), []);
   const polygons = useInterpolation(geodata);
+  const colors = useColorScale(
+    polygons.features.map((item) => item?.properties?.z)
+  );
 
   return (
     <MapContainer
@@ -37,19 +39,22 @@ export default function Map() {
           <Polygon
             key={index}
             positions={feature.geometry.coordinates as any}
+            stroke={false}
+            fillColor={colors[index]}
+            fillOpacity={.8}
           />
         );
       })}
-
       {points.map((item, index) => {
         return (
           <CircleMarker
             key={index}
             center={[item[0], item[1]]}
-            pathOptions={redOptions}
+            pathOptions={{ color: "#DD2D4A" }}
             radius={2}
+            opacity={1}
           >
-            <Popup>{`x: ${item[0]} y: ${item[1]} z: ${item[2]}`}</Popup>
+            <Popup>{`z: ${item[1]}`}</Popup>
           </CircleMarker>
         );
       })}

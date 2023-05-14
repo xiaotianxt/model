@@ -1,11 +1,4 @@
-import {
-  Feature,
-  FeatureCollection,
-  Point,
-  Polygon,
-  bbox,
-  interpolate,
-} from "@turf/turf";
+import { Feature, FeatureCollection, Point, Polygon, bbox } from "@turf/turf";
 import { useMemo } from "react";
 
 export interface InterpolationOptions {
