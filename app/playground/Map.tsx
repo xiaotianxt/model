@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import {
   MapContainer,
@@ -6,6 +6,7 @@ import {
   Popup,
   Polygon,
   ScaleControl,
+  ZoomControl,
 } from "react-leaflet";
 import { CRS } from "leaflet";
 import useInterpolation from "../utils/algorithm";
@@ -19,8 +20,8 @@ export default function Map() {
       item.geometry.coordinates.map((x) => x)
     ) as [number, number, number][];
   }, []);
-  const center = useMemo(() => centerMean(geodata), []);
   const polygons = useInterpolation(geodata);
+  const center = useMemo(() => centerMean(polygons), [polygons]);
   const colors = useColorScale(
     polygons.features.map((item) => item?.properties?.z)
   );
@@ -28,9 +29,11 @@ export default function Map() {
   return (
     <MapContainer
       center={center.geometry.coordinates as [number, number]}
-      zoom={8}
-      className="h-[calc(100vh-2.5rem)]"
+      zoom={7}
+      className="h-[100%]"
       crs={CRS.Simple}
+      attributionControl={false}
+      zoomControl={false}
     >
       {polygons.features.map((feature, index) => {
         return (
@@ -39,7 +42,7 @@ export default function Map() {
             positions={feature.geometry.coordinates as any}
             stroke={false}
             fillColor={colors[index]}
-            fillOpacity={.8}
+            fillOpacity={0.8}
           />
         );
       })}
@@ -51,6 +54,14 @@ export default function Map() {
             pathOptions={{ color: "#DD2D4A" }}
             radius={2}
             opacity={1}
+            eventHandlers={{
+              mouseover: (e) => {
+                e.target.openPopup();
+              },
+              mouseout: (e) => {
+                e.target.closePopup();
+              },
+            }}
           >
             <Popup>{`z: ${item[1]}`}</Popup>
           </CircleMarker>
@@ -58,6 +69,7 @@ export default function Map() {
       })}
 
       <ScaleControl imperial={false} />
+      <ZoomControl position="bottomright" />
     </MapContainer>
   );
 }
