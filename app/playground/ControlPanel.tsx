@@ -1,18 +1,19 @@
-import { useDrawer } from "@/components/drawer";
 import { IconAdjustmentsAlt } from "@tabler/icons-react";
-import { Button, Drawer, Form, FormProps, Radio, Slider, Switch } from "antd";
+import { Drawer, Form, FormProps, Radio, Slider, Switch } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { EAlgorithm } from "../types/enum";
 import { SliderMarks } from "antd/es/slider";
-import { useToggle } from "react-use";
+import { useDebounce, useToggle } from "react-use";
 import { useConfigStore } from "../store/config";
+import CircularSlider from "@fseehawer/react-circular-slider";
 
 const Item = Form.Item;
 
 interface Parameter {
   horizontalDensity: number;
   verticalDensity: number;
+  preferredDirection?: number;
 }
 
 export interface ControlFormValue {
@@ -35,6 +36,12 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
   value,
   onChange,
 }) => {
+  const [bindDensities, setBindDensities] = useToggle(false);
+
+  const handleBindDensityChange = (checked: boolean) => {
+    setBindDensities(checked);
+  };
+
   if (algorithm === EAlgorithm.IRREGULAR_TRIANGLES) {
     return (
       <>
@@ -46,35 +53,35 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
   }
 
   const marks: SliderMarks = {
-    0: "0",
+    1: "1",
+    2: "2",
+    3: "3",
+    4: "4",
+    5: "5",
+    6: "6",
+    7: "7",
+    8: "8",
+    9: "9",
     10: "10",
-    20: "20",
-    30: "30",
-    40: "40",
-    50: "50",
-    60: "60",
-    70: "70",
-    80: "80",
-    90: "90",
-    100: "100",
   };
 
   return (
     <>
-      <Item
-        label="横向密度"
-        name={["parameter", "horizontalDensity"]}
-        initialValue={10}
-      >
-        <Slider marks={marks} min={1} max={100} />
+      {algorithm === EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION && (
+        <Item label="倾向方位" name={["parameter", "preferredDirection"]}>
+          <CircularSlider width={200} knobSize={24} />
+        </Item>
+      )}
+      <Item label="横向密度" name={["parameter", "horizontalDensity"]}>
+        <Slider marks={marks} min={0.01} max={1} step={0.01} />
       </Item>
 
-      <Item
-        label="纵向密度"
-        name={["parameter", "verticalDensity"]}
-        initialValue={10}
-      >
-        <Slider marks={marks} min={1} max={100} />
+      <Item label="纵向密度" name={["parameter", "verticalDensity"]}>
+        <Slider marks={marks} min={0.01} max={1} step={0.01} />
+      </Item>
+
+      <Item label="绑定横纵密度">
+        <Switch onChange={handleBindDensityChange} />
       </Item>
     </>
   );
@@ -82,11 +89,23 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
 
 const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
   const [form] = useForm<ControlFormValue>();
+  const [formValues, setFormValues] = useState<ControlFormValue>();
+
   const algorithm = useWatch("algorithm", form);
   const showContour = useWatch("showContour", form);
   const [open, toggle] = useToggle(false);
 
   const { update, config } = useConfigStore();
+
+  useDebounce(
+    () => {
+      if (formValues) {
+        update({ config: formValues });
+      }
+    },
+    100,
+    [formValues]
+  );
 
   useEffect(() => {
     form.setFieldsValue(config);
@@ -113,7 +132,7 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
         <Form
           form={form}
           onValuesChange={(e) => {
-            form.validateFields().then((values) => update({ config: values }));
+            form.validateFields().then((values) => setFormValues(values));
           }}
         >
           <Item

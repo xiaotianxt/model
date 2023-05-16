@@ -11,8 +11,8 @@ export const useConfigStore = create<ConfigValue>((set, get) => ({
   config: {
     algorithm: EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION,
     parameter: {
-      horizontalDensity: 20,
-      verticalDensity: 20,
+      horizontalDensity: 0.5,
+      verticalDensity: 0.5,
     },
     showGrid: false,
     showContour: false,
@@ -22,7 +22,14 @@ export const useConfigStore = create<ConfigValue>((set, get) => ({
     set(old => {
       return {
         ...old,
-        ...state,
+        config: {
+          ...old.config,
+          ...state.config,
+          parameter: {
+            ...old.config.parameter,
+            ...state.config?.parameter,
+          }
+        }
       }
     });
   }

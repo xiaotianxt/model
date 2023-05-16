@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fseehawer/react-circular-slider": "^2.6.1",
     "@tabler/icons-react": "^2.18.0",
     "@turf/turf": "^6.5.0",
     "@types/node": "18.15.11",

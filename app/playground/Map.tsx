@@ -1,5 +1,6 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import "leaflet/dist/leaflet.css";
+import { centerMean } from "@turf/turf";
 import {
   MapContainer,
   CircleMarker,
@@ -9,18 +10,29 @@ import {
   ZoomControl,
 } from "react-leaflet";
 import { CRS } from "leaflet";
-import useInterpolation from "../utils/algorithm";
+import useInterpolation, { useContour } from "../utils/algorithm";
 import { geodata } from "../assets";
-import { centerMean } from "@turf/turf";
 import { useColorScale } from "../utils/colorbar";
+import { useConfigStore } from "../store/config";
 
 export default function Map() {
+  const {
+    config: { algorithm, parameter, showContour, showGrid, smoothContour },
+  } = useConfigStore();
   const points = useMemo<[number, number, number][]>(() => {
     return geodata.features.map((item) =>
       item.geometry.coordinates.map((x) => x)
     ) as [number, number, number][];
   }, []);
-  const polygons = useInterpolation(geodata);
+
+  const polygons = useInterpolation(geodata, {
+    property: "z",
+    algorithm,
+    parameter,
+  });
+
+  const contours = useContour(polygons, smoothContour ?? false);
+
   const center = useMemo(() => centerMean(polygons), [polygons]);
   const colors = useColorScale(
     polygons.features.map((item) => item?.properties?.z)
@@ -36,9 +48,12 @@ export default function Map() {
       zoomControl={false}
     >
       {polygons.features.map((feature, index) => {
+        const coordinatesString = JSON.stringify(
+            feature.geometry.coordinates
+          );
         return (
           <Polygon
-            key={index}
+            key={coordinatesString}
             positions={feature.geometry.coordinates as any}
             stroke={false}
             fillColor={colors[index]}
