@@ -1,5 +1,5 @@
 import { Feature, FeatureCollection, Point, Polygon, Properties, bbox } from "@turf/turf";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { ControlFormValue } from "../playground/ControlPanel";
 import { EAlgorithm } from "../types/enum";
 
@@ -7,6 +7,9 @@ export type InterpolationOptions = Pick<ControlFormValue, 'algorithm' | 'paramet
   property: string;
 }
 
+/**
+ * 反距离加权法
+ */
 function inverseDistanceWeighting(
   points: FeatureCollection<Point>,
   x: number,
@@ -35,41 +38,45 @@ function inverseDistanceWeighting(
   }
 }
 
+/**
+ * 方位取点加权法
+ */
 function directionalWeightedAverage(
   points: FeatureCollection<Point>,
   x: number,
   y: number,
-  p: number,
-  { property, parameter: { preferredDirection } }: InterpolationOptions
+  n: number,
+  { property }: InterpolationOptions
 ): number {
-  let numerator = 0;
-  let denominator = 0;
-  preferredDirection = preferredDirection ?? 0;
+  const sectors = Array(4 * n).fill(null).map(() => ({ dist: Infinity, value: 0 }));
+  const angleStep = 360 / (4 * n);
 
   for (const feature of points.features) {
     const point = feature.geometry.coordinates;
     const dx = point[0] - x;
     const dy = point[1] - y;
-    const dist = Math.sqrt(dx ** 2 + dy ** 2);
-    let direction = Math.atan2(dy, dx) * (180 / Math.PI); // direction in degrees
-    if (direction < 0) direction += 360; // normalize to [0, 360)
+    const dist = dx ** 2 + dy ** 2;
+    const angle = (Math.atan2(dy, dx) * (180 / Math.PI) + 360) % 360;
+    const sectorIndex = Math.floor(angle / angleStep);
 
-    const angularDifference = Math.min((direction - preferredDirection + 360) % 360, (preferredDirection - direction + 360) % 360);
-    let directionalWeight = 1 - angularDifference / 180; // diminishes from 1 to 0 as difference increases from 0 to 180
-
-    if (dist === 0) {
-      return feature?.properties?.[property] ?? 0; // if the point is at the exact location, return its value
+    if (dist < sectors[sectorIndex].dist) {
+      sectors[sectorIndex].dist = dist;
+      sectors[sectorIndex].value = feature?.properties?.[property] ?? 0;
     }
-    let weight = (1.0 / dist ** p) * directionalWeight;
-    numerator += feature?.properties?.[property] * weight;
-    denominator += weight;
   }
 
-  if (denominator === 0) {
-    return 0; // avoid division by zero
-  } else {
-    return numerator / denominator;
+  const validSectors = sectors.filter(({ dist }) => dist !== Infinity && dist !== 0);
+  const fullProducts = validSectors.reduce((acc, { dist }) => acc * dist, 1);
+  const products = validSectors.map(({ dist }) => fullProducts / dist);
+  const sumProducts = products.reduce((acc, product) => acc + product, 0);
+
+  let zA = 0;
+  for (let i = 0; i < validSectors.length; i++) {
+    const ci = products[i] / (sumProducts);
+    zA += ci * validSectors[i].value;
   }
+
+  return zA;
 }
 
 function interpolateGrid(
@@ -133,12 +140,21 @@ export const useInterpolation = (
   points: FeatureCollection<Point>,
   option: InterpolationOptions
 ) => {
+  const [interpolatedData, setInterpolatedData] = useState<FeatureCollection<Polygon>>();
 
-  const res = useMemo(() => {
-    return interpolateGrid(points, option);
+  useEffect(() => {
+    const calculateInterpolation = async () => {
+      const result = await interpolateGrid(points, option);
+      setInterpolatedData(result);
+    };
+
+    calculateInterpolation();
   }, [points, option]);
 
-  return res;
+  return interpolatedData ?? {
+    features: [],
+    type: "FeatureCollection",
+  };
 };
 
 export const useContour = (polygon: FeatureCollection<Polygon, Properties>, smooth: boolean) => {
