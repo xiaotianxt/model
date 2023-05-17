@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { Menu, MenuProps } from "antd";
-import { IconBrandGithub } from "@tabler/icons-react";
 
 const items: MenuProps["items"] = [
   {

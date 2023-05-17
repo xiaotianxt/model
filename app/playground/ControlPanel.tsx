@@ -6,14 +6,12 @@ import { EAlgorithm } from "../types/enum";
 import { SliderMarks } from "antd/es/slider";
 import { useDebounce, useToggle } from "react-use";
 import { useConfigStore } from "../store/config";
-import CircularSlider from "@fseehawer/react-circular-slider";
 
 const Item = Form.Item;
 
 interface Parameter {
   horizontalDensity: number;
   verticalDensity: number;
-  preferredDirection?: number;
 }
 
 export interface ControlFormValue {
@@ -67,11 +65,6 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
 
   return (
     <>
-      {algorithm === EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION && (
-        <Item label="倾向方位" name={["parameter", "preferredDirection"]}>
-          <CircularSlider width={200} knobSize={24} />
-        </Item>
-      )}
       <Item label="横向密度" name={["parameter", "horizontalDensity"]}>
         <Slider marks={marks} min={0.01} max={1} step={0.01} />
       </Item>
