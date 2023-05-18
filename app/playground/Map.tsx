@@ -11,7 +11,7 @@ import {
   LayerGroup,
 } from "react-leaflet";
 import { CRS } from "leaflet";
-import useInterpolation, { useContour } from "../utils/algorithm";
+import useAlgorithm, { useContour } from "../utils/algorithm";
 import { geodata } from "../assets";
 import { useColorScale } from "../utils/colorbar";
 import { useConfigStore } from "../store/config";
@@ -20,11 +20,6 @@ export default function Map() {
   const {
     config: { algorithm, parameter, showContour, showGrid, smoothContour },
   } = useConfigStore();
-  const points = useMemo<[number, number, number][]>(() => {
-    return geodata.features.map((item) =>
-      item.geometry.coordinates.map((x) => x)
-    ) as [number, number, number][];
-  }, []);
 
   const option = useMemo(
     () => ({
@@ -35,11 +30,15 @@ export default function Map() {
     [algorithm, parameter]
   );
 
-  const polygons = useInterpolation(geodata, option);
+  const polygons = useAlgorithm(geodata, option);
   const contours = useContour(polygons, smoothContour ?? false);
   const center = useMemo(() => centerMean(geodata), []);
   const colors = useColorScale(
-    polygons.features.map((item) => item?.properties?.z)
+    polygons.features.map((item) => item?.properties?.z ?? item?.properties?.a)
+  );
+  const pointColors = useColorScale(
+    geodata.features.map((item) => item?.properties?.z),
+    { colorRange: ["#490000", "#F2BFC2"] }
   );
 
   // 确保点保持在最上层
@@ -62,6 +61,7 @@ export default function Map() {
       <LayerGroup>
         {polygons.features.map((feature, index) => {
           const z = feature.properties?.z || 0;
+          let closeTimeout: NodeJS.Timeout;
           return (
             <Polygon
               key={`${z}-${index}`}
@@ -69,19 +69,41 @@ export default function Map() {
               stroke={false}
               fillColor={colors[index]}
               fillOpacity={0.8}
-            />
+              eventHandlers={{
+                mouseover: (e) => {
+                  clearTimeout(closeTimeout);
+                  e.target.openPopup();
+                  e.target.setStyle({ fillColor: "darkblue" });
+                },
+                mouseout: (e) => {
+                  e.target.setStyle({ fillColor: colors[index] });
+                  if (
+                    (
+                      e.originalEvent.relatedTarget as HTMLElement
+                    ).classList?.[0]?.includes("popup")
+                  ) {
+                    return;
+                  }
+                  closeTimeout = setTimeout(() => {
+                    e.target.closePopup(); // Only close the popup if mouse does not return in time
+                  }, 200); // 200 ms delay
+                },
+              }}
+            >
+              <Popup>{JSON.stringify(feature?.properties)}</Popup>
+            </Polygon>
           );
         })}
       </LayerGroup>
       <LayerGroup ref={ref}>
-        {points.map((item, index) => {
+        {geodata?.features.map((feature, index) => {
+          const item = feature.geometry.coordinates as [number, number];
           return (
             <CircleMarker
               key={index}
               center={[item[0], item[1]]}
-              pathOptions={{ color: "#DD2D4A" }}
+              pathOptions={{ color: pointColors[index], opacity: 1 }}
               radius={2}
-              opacity={1}
               eventHandlers={{
                 mouseover: (e) => {
                   e.target.openPopup();

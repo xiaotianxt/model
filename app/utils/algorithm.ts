@@ -1,9 +1,9 @@
-import { Feature, FeatureCollection, Point, Polygon, Properties, bbox } from "@turf/turf";
+import { Feature, FeatureCollection, Point, Polygon, Properties, bbox, tin } from "@turf/turf";
 import { useEffect, useState } from "react";
 import { ControlFormValue } from "../playground/ControlPanel";
 import { EAlgorithm } from "../types/enum";
 
-export type InterpolationOptions = Pick<ControlFormValue, 'algorithm' | 'parameter'> & {
+export type AlgorithmOptions = Pick<ControlFormValue, 'algorithm' | 'parameter'> & {
   property: string;
 }
 
@@ -15,7 +15,7 @@ function inverseDistanceWeighting(
   x: number,
   y: number,
   p: number,
-  { property }: InterpolationOptions
+  { property }: AlgorithmOptions
 ): number {
   let numerator = 0;
   let denominator = 0;
@@ -46,7 +46,7 @@ function directionalWeightedAverage(
   x: number,
   y: number,
   n: number,
-  { property }: InterpolationOptions
+  { property }: AlgorithmOptions
 ): number {
   const sectors = Array(4 * n).fill(null).map(() => ({ dist: Infinity, value: 0 }));
   const angleStep = 360 / (4 * n);
@@ -81,7 +81,7 @@ function directionalWeightedAverage(
 
 function interpolateGrid(
   points: FeatureCollection<Point>,
-  options: InterpolationOptions
+  options: AlgorithmOptions
 ): FeatureCollection<Polygon> {
   const polygons: Feature<Polygon, { [property: string]: number }>[] = [];
 
@@ -136,22 +136,30 @@ function interpolateGrid(
   return { type: "FeatureCollection", features: polygons };
 }
 
-export const useInterpolation = (
+function TIN(points: FeatureCollection<Point>, options: AlgorithmOptions): FeatureCollection<Polygon> {
+  return tin(points, 'z');
+}
+
+export const useAlgorithm = (
   points: FeatureCollection<Point>,
-  option: InterpolationOptions
+  option: AlgorithmOptions
 ) => {
-  const [interpolatedData, setInterpolatedData] = useState<FeatureCollection<Polygon>>();
+  const [polygons, setPolygons] = useState<FeatureCollection<Polygon>>();
 
   useEffect(() => {
     const calculateInterpolation = async () => {
-      const result = await interpolateGrid(points, option);
-      setInterpolatedData(result);
-    };
-
+      if (option.algorithm === EAlgorithm.INVERSE_SQUARE_DISTANCE || option.algorithm === EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION) {
+        setPolygons(await interpolateGrid(points, option));
+      } else {
+        setPolygons(await TIN(points, option));
+      }
+    }
     calculateInterpolation();
-  }, [points, option]);
+  }, [option, points]);
 
-  return interpolatedData ?? {
+  console.log(polygons);
+
+  return polygons ?? {
     features: [],
     type: "FeatureCollection",
   };
@@ -160,4 +168,4 @@ export const useInterpolation = (
 export const useContour = (polygon: FeatureCollection<Polygon, Properties>, smooth: boolean) => {
   return [];
 }
-export default useInterpolation;
+export default useAlgorithm;
