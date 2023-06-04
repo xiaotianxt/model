@@ -92,8 +92,12 @@ const Map: FC<{ configCollapsed: boolean }> = ({ configCollapsed }) => {
       return polygonLayer;
     });
 
+    console.log("[RenderMap] polygons created", diff());
+
     const polygonFeatureGroup = L.featureGroup(polygonLayers).addTo(map);
     polygonLayerRef.current = polygonFeatureGroup;
+
+    console.log("[RenderMap] polygons added to map", diff());
 
     // 将 pointsLayer 移动到最上层
     pointLayerRef.current?.bringToFront();
