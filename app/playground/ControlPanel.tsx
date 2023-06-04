@@ -75,13 +75,13 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
   return (
     <>
       <Item label="横向密度" name={["parameter", "horizontalDensity"]}>
-        <Slider marks={marks} min={0.02} max={1} step={0.01} />
+        <Slider marks={marks} min={0.01} max={1} step={0.01} />
       </Item>
 
       <Item label="纵向密度" name={["parameter", "verticalDensity"]}>
         <Slider
           marks={marks}
-          min={0.02}
+          min={0.01}
           max={1}
           step={0.01}
           disabled={bindDensities}

@@ -8,7 +8,12 @@ import useAlgorithm, { useContour } from "../utils/algorithm";
 import { useColorScale } from "../utils/colorbar";
 import { timeDiff } from "../utils/debug";
 
-const Map: FC<{ configCollapsed: boolean }> = ({ configCollapsed }) => {
+const pointColorScaleParam = [
+  geodata.features.map((item) => item?.properties?.z),
+  { colorRange: ["#490000", "#F2BFC2"] },
+] as any;
+
+const Map: FC = () => {
   const {
     config: { algorithm, parameter, showContour, showGrid, smoothContour },
   } = useConfigStore();
@@ -26,12 +31,17 @@ const Map: FC<{ configCollapsed: boolean }> = ({ configCollapsed }) => {
   const { polygons, computing } = useAlgorithm(geodata, option);
   const contours = useContour(polygons, smoothContour ?? false);
   const center = useMemo(() => centerMean(geodata), []);
-  const colors = useColorScale(
-    polygons.features.map((item) => item?.properties?.z ?? item?.properties?.a)
+  const properties = useMemo(
+    () =>
+      polygons.features.map(
+        (item) => item?.properties?.z ?? item?.properties?.a
+      ),
+    [polygons]
   );
+  const colors = useColorScale(properties);
   const pointColors = useColorScale(
-    geodata.features.map((item) => item?.properties?.z),
-    { colorRange: ["#490000", "#F2BFC2"] }
+    pointColorScaleParam[0],
+    pointColorScaleParam[1]
   );
   const mapRef = useRef<L.Map | null>(null);
   const pointLayerRef = useRef<L.FeatureGroup | null>(null);

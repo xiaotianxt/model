@@ -10,7 +10,7 @@ import {
   ZoomControl,
   LayerGroup,
 } from "react-leaflet";
-import { CRS } from "leaflet";
+import { CRS, canvas } from "leaflet";
 import useAlgorithm, { useContour } from "../utils/algorithm";
 import { geodata } from "../assets";
 import { useColorScale } from "../utils/colorbar";
@@ -76,6 +76,8 @@ export default function Map({ configCollapsed }: { configCollapsed: boolean }) {
         crs={CRS.Simple}
         attributionControl={false}
         zoomControl={false}
+        preferCanvas
+        renderer={canvas()}
       >
         <LayerGroup>
           {polygons.features.map((feature, index) => {

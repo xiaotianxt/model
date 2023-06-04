@@ -6,21 +6,43 @@ interface UseColorScaleOptions {
   colorRange?: [string, string];
 }
 
+function arrayMin(arr: number[]) {
+  var len = arr.length,
+    min = Infinity;
+  while (len--) {
+    if (arr[len] < min) {
+      min = arr[len];
+    }
+  }
+  return min;
+}
+
+function arrayMax(arr: number[]) {
+  var len = arr.length,
+    max = -Infinity;
+  while (len--) {
+    if (arr[len] > max) {
+      max = arr[len];
+    }
+  }
+  return max;
+}
+
 export const useColorScale = (
   values: number[],
   options?: UseColorScaleOptions
 ): string[] => {
-  const { colorRange = ["#265364", "#cbeef3"] } = options || {};
-
   const colorScale = useMemo(() => {
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+    const { colorRange = ["#265364", "#cbeef3"] } = options || {};
+    const min = arrayMin(values);
+    const max = arrayMax(values);
 
-    return scaleLinear<string>()
+    const scaler = scaleLinear<string>()
       .domain([min, max])
       .interpolate(interpolateRgb)
       .range(colorRange);
-  }, [values, colorRange]);
+    return values.map(scaler);
+  }, [values, options]);
 
-  return values.map(colorScale);
+  return colorScale;
 };

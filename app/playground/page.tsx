@@ -20,7 +20,7 @@ export default function Playground() {
         <Header className="bg-white shadow-sm">
           <NavigationMenu />
         </Header>
-        <NativeMap configCollapsed={configCollapsed} />
+        <NativeMap />
       </Layout>
       <Sider
         style={{
