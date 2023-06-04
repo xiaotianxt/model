@@ -1,5 +1,5 @@
 import { IconAdjustmentsAlt } from "@tabler/icons-react";
-import { Drawer, Form, FormProps, Radio, Slider, Switch } from "antd";
+import { Card, Drawer, Form, FormProps, Radio, Slider, Switch } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import { FC, useEffect, useState } from "react";
 import { EAlgorithm } from "../types/enum";
@@ -36,6 +36,20 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
 }) => {
   const [bindDensities, setBindDensities] = useToggle(false);
 
+  // 绑定参数处理
+  const form = Form.useFormInstance();
+  const density = useWatch("parameter", form);
+  useEffect(() => {
+    if (bindDensities) {
+      form.setFieldsValue({
+        parameter: {
+          horizontalDensity: density?.horizontalDensity,
+          verticalDensity: density?.horizontalDensity,
+        },
+      });
+    }
+  }, [bindDensities, density, form]);
+
   const handleBindDensityChange = (checked: boolean) => {
     setBindDensities(checked);
   };
@@ -51,26 +65,27 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
   }
 
   const marks: SliderMarks = {
-    1: "1",
-    2: "2",
-    3: "3",
-    4: "4",
-    5: "5",
-    6: "6",
-    7: "7",
-    8: "8",
-    9: "9",
-    10: "10",
+    [0.1]: "0.1",
+    [0.3]: "0.3",
+    [0.5]: "0.5",
+    [0.7]: "0.7",
+    [0.9]: "0.9",
   };
 
   return (
     <>
       <Item label="横向密度" name={["parameter", "horizontalDensity"]}>
-        <Slider marks={marks} min={0.01} max={1} step={0.01} />
+        <Slider marks={marks} min={0.02} max={1} step={0.01} />
       </Item>
 
       <Item label="纵向密度" name={["parameter", "verticalDensity"]}>
-        <Slider marks={marks} min={0.01} max={1} step={0.01} />
+        <Slider
+          marks={marks}
+          min={0.02}
+          max={1}
+          step={0.01}
+          disabled={bindDensities}
+        />
       </Item>
 
       <Item label="绑定横纵密度">
@@ -106,81 +121,66 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const showConfig = () => {
-    toggle();
-  };
-
   return (
-    <>
-      <div
-        onClick={showConfig}
-        className="absolute right-[4rem] bottom-6
-        text-lg p-2 bg-white hover:bg-slate-100 shadow-md
-        transition-transform ease-in-out hover:scale-125
-        rounded-full border-[#b0b0b0] border-2"
+    <Card className="w-full h-full">
+      <Form
+        form={form}
+        onValuesChange={(e) => {
+          form.validateFields().then((values) => setFormValues(values));
+        }}
       >
-        <IconAdjustmentsAlt size="1.8rem" />
-      </div>
-      <Drawer title="设置" width={720} open={open} onClose={toggle}>
-        <Form
-          form={form}
-          onValuesChange={(e) => {
-            form.validateFields().then((values) => setFormValues(values));
-          }}
+        <Item
+          label="算法"
+          name="algorithm"
+          initialValue={EAlgorithm.INVERSE_SQUARE_DISTANCE}
         >
-          <Item
-            label="算法"
-            name="algorithm"
-            initialValue={EAlgorithm.INVERSE_SQUARE_DISTANCE}
-          >
-            <Radio.Group
-              options={[
-                {
-                  label: "距离平方倒数法",
-                  value: EAlgorithm.INVERSE_SQUARE_DISTANCE,
-                },
-                {
-                  label: "按方位加权平均法",
-                  value: EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION,
-                },
-                {
-                  label: "TIN 不规则三角网",
-                  value: EAlgorithm.IRREGULAR_TRIANGLES,
-                },
-              ]}
-            />
-          </Item>
-          <Form.Item label="参数" name="parameter">
-            <AlgorithmParameter algorithm={algorithm} />
-          </Form.Item>
-          <Item
-            label="显示格网"
-            name="showGrid"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch />
-          </Item>
-          <Item
-            label="显示等值线"
-            name="showContour"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch />
-          </Item>
-          <Item label="等值线类型" name="smoothContour" initialValue={false}>
-            <Radio.Group
-              options={[
-                { label: "光滑", value: true },
-                { label: "折线", value: false },
-              ]}
-              disabled={!showContour}
-            ></Radio.Group>
-          </Item>
-        </Form>
-      </Drawer>
-    </>
+          <Radio.Group
+            options={[
+              {
+                label: "距离平方倒数法",
+                value: EAlgorithm.INVERSE_SQUARE_DISTANCE,
+              },
+              {
+                label: "按方位加权平均法",
+                value: EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION,
+              },
+              {
+                label: "TIN 不规则三角网",
+                value: EAlgorithm.IRREGULAR_TRIANGLES,
+              },
+            ]}
+          />
+        </Item>
+        <Form.Item label="参数" name="parameter">
+          <AlgorithmParameter algorithm={algorithm} />
+        </Form.Item>
+        <Item
+          label="显示格网"
+          name="showGrid"
+          valuePropName="checked"
+          initialValue={false}
+        >
+          <Switch />
+        </Item>
+        <Item
+          label="显示等值线"
+          name="showContour"
+          valuePropName="checked"
+          initialValue={false}
+        >
+          <Switch />
+        </Item>
+        <Item label="等值线类型" name="smoothContour" initialValue={false}>
+          <Radio.Group
+            options={[
+              { label: "光滑", value: true },
+              { label: "折线", value: false },
+            ]}
+            disabled={!showContour}
+          ></Radio.Group>
+        </Item>
+      </Form>
+    </Card>
   );
 };
 
