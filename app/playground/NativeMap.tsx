@@ -52,6 +52,7 @@ const Map: FC<{ configCollapsed: boolean }> = ({ configCollapsed }) => {
         center: center.geometry.coordinates as any,
         zoom: 7,
         crs: L.CRS.Simple,
+        renderer: L.canvas(),
       });
       mapRef.current = map;
 
