@@ -8,6 +8,9 @@ import ControlPanel from "./ControlPanel";
 import Sider from "antd/es/layout/Sider";
 
 const DynamicMap = dynamic(async () => await import("./Map"), { ssr: false });
+const NativeMap = dynamic(async () => await import("./NativeMap"), {
+  ssr: false,
+});
 
 export default function Playground() {
   const [configCollapsed, setConfigCollapsed] = useState(false);
@@ -17,7 +20,7 @@ export default function Playground() {
         <Header className="bg-white shadow-sm">
           <NavigationMenu />
         </Header>
-        <DynamicMap configCollapsed={configCollapsed} />
+        <NativeMap configCollapsed={configCollapsed} />
       </Layout>
       <Sider
         style={{

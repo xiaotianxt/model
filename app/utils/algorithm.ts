@@ -184,8 +184,6 @@ export const useAlgorithm = (
     calculateInterpolation();
   }, [option, points, setComputing]);
 
-  console.log(computing);
-
   return {
     polygons: polygons ?? {
       features: [],
