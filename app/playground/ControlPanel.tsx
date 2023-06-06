@@ -38,9 +38,10 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
 
   // 绑定参数处理
   const form = Form.useFormInstance();
-  const density = useWatch("parameter", form);
   useEffect(() => {
     if (bindDensities) {
+      const density = form.getFieldValue("parameter");
+      console.log(density);
       form.setFieldsValue({
         parameter: {
           horizontalDensity: density?.horizontalDensity,
@@ -48,7 +49,7 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
         },
       });
     }
-  }, [bindDensities, density, form]);
+  }, [bindDensities, form]);
 
   const handleBindDensityChange = (checked: boolean) => {
     setBindDensities(checked);
@@ -75,13 +76,20 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
   return (
     <>
       <Item label="横向密度" name={["parameter", "horizontalDensity"]}>
-        <Slider marks={marks} min={0.01} max={1} step={0.01} />
+        <Slider marks={marks} min={0.02} max={1} step={0.01} />
       </Item>
 
-      <Item label="纵向密度" name={["parameter", "verticalDensity"]}>
+      <Item
+        label="纵向密度"
+        name={
+          bindDensities
+            ? ["parameter", "horizontalDensity"]
+            : ["parameter", "verticalDensity"]
+        }
+      >
         <Slider
           marks={marks}
-          min={0.01}
+          min={0.02}
           max={1}
           step={0.01}
           disabled={bindDensities}

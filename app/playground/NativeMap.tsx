@@ -28,7 +28,7 @@ const Map: FC = () => {
   );
 
   // 计算得到的 polygons
-  const { polygons, computing } = useAlgorithm(geodata, option);
+  const { polygons } = useAlgorithm(geodata, option);
   const contours = useContour(polygons, smoothContour ?? false);
   const center = useMemo(() => centerMean(geodata), []);
   const properties = useMemo(
