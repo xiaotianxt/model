@@ -5,14 +5,17 @@ import {
   Polygon,
   Properties,
   bbox,
-  tin,
 } from "@turf/turf";
 import { useEffect, useState } from "react";
 import { ControlFormValue } from "../playground/ControlPanel";
 import { EAlgorithm } from "../types/enum";
 import { useToggle } from "react-use";
+import myTIN from "./tin";
 
-export type AlgorithmOptions = Pick<ControlFormValue, "algorithm" | "parameter"> & {
+export type AlgorithmOptions = Pick<
+  ControlFormValue,
+  "algorithm" | "parameter"
+> & {
   property: string;
 };
 
@@ -156,7 +159,7 @@ function TIN(
   points: FeatureCollection<Point>,
   options: AlgorithmOptions
 ): FeatureCollection<Polygon> {
-  return tin(points, "z");
+  return myTIN(points, "z");
 }
 
 export const useAlgorithm = (
