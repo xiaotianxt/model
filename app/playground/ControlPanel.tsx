@@ -1,7 +1,7 @@
 import { IconAdjustmentsAlt } from "@tabler/icons-react";
 import { Card, Drawer, Form, FormProps, Radio, Slider, Switch } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { EAlgorithm } from "../types/enum";
 import { SliderMarks } from "antd/es/slider";
 import { useDebounce, useToggle } from "react-use";
@@ -24,36 +24,44 @@ export interface ControlFormValue {
 
 interface AlgorithmParameterFormProps {
   algorithm: EAlgorithm;
-  value?: Parameter;
-  onChange?: (value: Parameter) => void;
 }
 
 // antd custom controled input component
-const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
-  algorithm,
-  value,
-  onChange,
-}) => {
+const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({ algorithm }) => {
   const [bindDensities, setBindDensities] = useToggle(false);
 
   // 绑定参数处理
   const form = Form.useFormInstance();
-  useEffect(() => {
-    if (bindDensities) {
-      const density = form.getFieldValue("parameter");
-      console.log(density);
-      form.setFieldsValue({
-        parameter: {
-          horizontalDensity: density?.horizontalDensity,
-          verticalDensity: density?.horizontalDensity,
-        },
-      });
-    }
-  }, [bindDensities, form]);
 
-  const handleBindDensityChange = (checked: boolean) => {
-    setBindDensities(checked);
-  };
+  const handleBindDensityChange = useCallback(
+    (checked: boolean) => {
+      setBindDensities(checked);
+      checked &&
+        form.setFieldsValue({
+          parameter: {
+            verticalDensity: form.getFieldValue([
+              "parameter",
+              "horizontalDensity",
+            ]),
+          },
+        });
+    },
+    [form, setBindDensities]
+  );
+
+  const handleHorizontalDensityChange = useCallback(
+    (val: number) => {
+      if (bindDensities) {
+        form.setFieldsValue({
+          parameter: {
+            horizontalDensity: val,
+            verticalDensity: val,
+          },
+        });
+      }
+    },
+    [bindDensities, form]
+  );
 
   if (algorithm === EAlgorithm.IRREGULAR_TRIANGLES) {
     return (
@@ -76,7 +84,13 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
   return (
     <>
       <Item label="横向密度" name={["parameter", "horizontalDensity"]}>
-        <Slider marks={marks} min={0.02} max={1} step={0.01} />
+        <Slider
+          marks={marks}
+          min={0.02}
+          max={1}
+          step={0.01}
+          onChange={handleHorizontalDensityChange}
+        />
       </Item>
 
       <Item
@@ -96,7 +110,7 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({
         />
       </Item>
 
-      <Item label="绑定横纵密度">
+      <Item label="绑定横纵密度" name="bindHorizationAndVertical">
         <Switch onChange={handleBindDensityChange} />
       </Item>
     </>
@@ -109,7 +123,6 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
 
   const algorithm = useWatch("algorithm", form);
   const showContour = useWatch("showContour", form);
-  const [open, toggle] = useToggle(false);
 
   const { update, config } = useConfigStore();
 
