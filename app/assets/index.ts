@@ -1,5 +1,5 @@
-import { FeatureCollection, Point, bbox, center, toWgs84 } from "@turf/turf";
 import vector from "./vector.geojson.json";
+import { ElevationPointCollection } from "../utils/algorithm";
 
 vector.features = vector.features.map((feature) => {
   const coord = feature.geometry.coordinates;
@@ -12,6 +12,6 @@ vector.features = vector.features.map((feature) => {
   };
 });
 
-export const geodata = vector as FeatureCollection<Point>;
+export const geodata = vector as unknown as ElevationPointCollection;
 
 // export const geodata = toWgs84(vector) as FeatureCollection<Point>;

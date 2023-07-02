@@ -4,6 +4,7 @@ import {
   FeatureCollection,
   Point,
 } from "@turf/turf";
+import { ElevationPointCollection } from "./algorithm";
 
 //定义了一个表示三角形的类
 class Triangle {
@@ -178,7 +179,7 @@ function dedup(edges: Vertex[]) {
 }
 
 // 对外提供的函数，接受点集和属性名，返回Delaunay三角剖分结果
-export default function tin(points: FeatureCollection<Point>, z?: string) {
+export default function tin(points: ElevationPointCollection, z?: string) {
   return featureCollection(
     triangulate(
       points.features.map((p) => {
@@ -186,7 +187,7 @@ export default function tin(points: FeatureCollection<Point>, z?: string) {
           x: p.geometry.coordinates[0],
           y: p.geometry.coordinates[1],
         };
-        if (z && p.properties) point.z = p.properties[z];
+        if (z && p.properties) point.z = p.properties.z;
         return point;
       })
     ).map((triangle) => {
@@ -200,9 +201,9 @@ export default function tin(points: FeatureCollection<Point>, z?: string) {
           ],
         ],
         {
-          a: triangle.a.z,
-          b: triangle.b.z,
-          c: triangle.c.z,
+          a: triangle.a.z as number,
+          b: triangle.b.z as number,
+          c: triangle.c.z as number,
         }
       );
     })

@@ -3,7 +3,6 @@ import {
   FeatureCollection,
   Point,
   Polygon,
-  Properties,
   bbox,
 } from "@turf/turf";
 import { useEffect, useState } from "react";
@@ -18,6 +17,14 @@ export type AlgorithmOptions = Pick<
 > & {
   property: string;
 };
+
+type Properties = {
+  [x: string]: number;
+}
+export type ElevationPoint = Feature<Point, Properties>;
+export type ElevationPointCollection = FeatureCollection<Point, Properties>;
+export type ElevationPolygon = Feature<Polygon, Properties>;
+export type ElevationPolygonCollection = FeatureCollection<Polygon, Properties>;
 
 /**
  * 反距离加权法
@@ -96,10 +103,10 @@ function directionalWeightedAverage(
 }
 
 async function interpolateGrid(
-  points: FeatureCollection<Point>,
+  points: ElevationPointCollection,
   options: AlgorithmOptions
-): Promise<FeatureCollection<Polygon>> {
-  const polygons: Feature<Polygon, { [property: string]: number }>[] = [];
+): Promise<ElevationPolygonCollection> {
+  const polygons: ElevationPolygon[] = [];
 
   // Define the area that the grid will cover (adjust to fit your data)
   const [xStart, yStart, xEnd, yEnd] = bbox(points);
@@ -129,7 +136,7 @@ async function interpolateGrid(
             );
 
       // Create a polygon that represents the current cell
-      const polygon: Feature<Polygon, { [property: string]: number }> = {
+      const polygon: ElevationPolygon = {
         type: "Feature",
         geometry: {
           type: "Polygon",
@@ -144,7 +151,7 @@ async function interpolateGrid(
           ],
         },
         properties: {
-          [options.property]: value,
+          [options.property as 'z']: value,
         },
       };
 
@@ -156,23 +163,23 @@ async function interpolateGrid(
 }
 
 function TIN(
-  points: FeatureCollection<Point>,
+  points: ElevationPointCollection,
   options: AlgorithmOptions
-): FeatureCollection<Polygon> {
-  return myTIN(points, "z");
+): ElevationPolygonCollection {
+  return myTIN(points);
 }
 
 export const useAlgorithm = (
-  points: FeatureCollection<Point>,
+  points: ElevationPointCollection,
   option: AlgorithmOptions
 ) => {
-  const [polygons, setPolygons] = useState<FeatureCollection<Polygon>>();
+  const [polygons, setPolygons] = useState<ElevationPolygonCollection>();
   const [computing, setComputing] = useToggle(false);
 
   useEffect(() => {
     const calculateInterpolation = async () => {
       setComputing(true);
-      let res: FeatureCollection<Polygon>;
+      let res: ElevationPolygonCollection;
       if (
         option.algorithm === EAlgorithm.INVERSE_SQUARE_DISTANCE ||
         option.algorithm === EAlgorithm.WEIGHTED_AVERAGE_BY_ORIENTATION

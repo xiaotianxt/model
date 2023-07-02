@@ -1,10 +1,10 @@
-import { FC, useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L, { Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { centerMean } from "@turf/turf";
+import { Feature, centerMean } from "@turf/turf";
 import { geodata } from "../assets";
 import { useConfigStore } from "../store/config";
-import useAlgorithm, { useContour } from "../utils/algorithm";
+import useAlgorithm, { ElevationPolygon, useContour } from "../utils/algorithm";
 import { useColorScale } from "../utils/colorbar";
 import { timeDiff } from "../utils/debug";
 
@@ -13,10 +13,19 @@ const pointColorScaleParam = [
   { colorRange: ["#490000", "#F2BFC2"] },
 ] as any;
 
-const Map: FC = () => {
+const VectorInfoIndicator: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & {
+    hoveredPolygon?: ElevationPolygon;
+  }
+> = ({ hoveredPolygon, ...rest }) => {
+  return <div {...rest}>{JSON.stringify(hoveredPolygon)}</div>;
+};
+
+const Map: React.FC = () => {
   const {
     config: { algorithm, parameter, showContour, showGrid, smoothContour },
   } = useConfigStore();
+  const [hoveredPolygon, setHoveredPolygon] = useState<ElevationPolygon>();
 
   const option = useMemo(
     () => ({
@@ -50,6 +59,8 @@ const Map: FC = () => {
   const renderMap = useCallback(async () => {
     const diff = timeDiff();
     console.log("[RenderMap] start", diff());
+
+    /** 创建渲染 Map */
     let map: LeafletMap;
     if (mapRef.current) {
       console.log("[RenderMap] not first render", diff());
@@ -75,8 +86,7 @@ const Map: FC = () => {
             opacity: 1,
             radius: 2,
           }
-        );
-
+        ).bindTooltip(`${(feature.properties as any).z}`);
         return marker;
       });
 
@@ -99,6 +109,9 @@ const Map: FC = () => {
         fillColor: color,
         fillOpacity: 0.8,
         stroke: false,
+      }).addEventListener("mouseover", () => {
+        console.log("mouseover");
+        setHoveredPolygon(feature);
       });
       return polygonLayer;
     });
@@ -127,7 +140,12 @@ const Map: FC = () => {
     };
   }, [polygons, colors, center, renderMap]);
 
-  return <div id="map" style={{ height: "100%", width: "100%" }} />;
+  return (
+    <>
+      <div id="map" style={{ height: "100%", width: "100%" }} />
+      <VectorInfoIndicator hoveredPolygon={hoveredPolygon} />
+    </>
+  );
 };
 
 export default Map;
