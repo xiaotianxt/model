@@ -18,7 +18,7 @@ const VectorInfoIndicator: React.FC<
     hoveredPolygon?: ElevationPolygon;
   }
 > = ({ hoveredPolygon, ...rest }) => {
-  return <div {...rest}>{JSON.stringify(hoveredPolygon)}</div>;
+  return <div {...rest}>{JSON.stringify(hoveredPolygon?.properties)}</div>;
 };
 
 const Map: React.FC = () => {
@@ -57,6 +57,7 @@ const Map: React.FC = () => {
   const polygonLayerRef = useRef<L.Layer | null>(null);
 
   const renderMap = useCallback(async () => {
+    setHoveredPolygon(undefined);
     const diff = timeDiff();
     console.log("[RenderMap] start", diff());
 
@@ -109,10 +110,16 @@ const Map: React.FC = () => {
         fillColor: color,
         fillOpacity: 0.8,
         stroke: false,
-      }).addEventListener("mouseover", () => {
-        console.log("mouseover");
-        setHoveredPolygon(feature);
-      });
+      })
+        .addEventListener("mouseover", (e) => {
+          e.target.setStyle({ fillOpacity: 1 });
+          console.log("mouseover");
+          setHoveredPolygon(feature);
+        })
+        .addEventListener("mouseout", (e) => {
+          e.target.setStyle({ fillOpacity: 0.8 });
+          console.log("mouseout");
+        });
       return polygonLayer;
     });
 

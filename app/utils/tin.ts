@@ -1,9 +1,4 @@
-import {
-  polygon,
-  featureCollection,
-  FeatureCollection,
-  Point,
-} from "@turf/turf";
+import { polygon, featureCollection } from "@turf/turf";
 import { ElevationPointCollection } from "./algorithm";
 
 //定义了一个表示三角形的类
