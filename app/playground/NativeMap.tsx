@@ -40,28 +40,30 @@ const Map: React.FC = () => {
   const { polygons } = useAlgorithm(geodata, option);
   const contours = useContour(polygons, smoothContour ?? false);
   const center = useMemo(() => centerMean(geodata), []);
-  const properties = useMemo(
+  const polygonProperties = useMemo(
     () =>
       polygons.features.map(
         (item) => item?.properties?.z ?? item?.properties?.a
       ),
     [polygons]
   );
-  const colors = useColorScale(properties);
+  const contourProperties = useMemo(
+    () => contours.features.map((item) => item.properties?.z ?? 0),
+    [contours]
+  );
+  const colors = useColorScale(polygonProperties);
   const pointColors = useColorScale(
     pointColorScaleParam[0],
     pointColorScaleParam[1]
   );
-  const contoursColors = useColorScale(
-    contours.features.map((item) => item.properties?.z ?? 0)
-  );
+  const contoursColors = useColorScale(contourProperties);
   const mapRef = useRef<L.Map | null>(null);
   const pointLayerRef = useRef<L.FeatureGroup | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
 
   const renderMap = useCallback(async () => {
     setHoveredPolygon(undefined);
-    const diff = timeDiff();
+    console.log("[Rerender]");
 
     /** 创建渲染 Map */
     let map: LeafletMap;
@@ -111,12 +113,10 @@ const Map: React.FC = () => {
       })
         .addEventListener("mouseover", (e) => {
           e.target.setStyle({ fillOpacity: 1 });
-          console.log("mouseover");
           setHoveredPolygon(feature);
         })
         .addEventListener("mouseout", (e) => {
           e.target.setStyle({ fillOpacity: 0.8 });
-          console.log("mouseout");
         });
       return polygonLayer;
     });
@@ -125,21 +125,17 @@ const Map: React.FC = () => {
     polygonLayerRef.current = polygonFeatureGroup;
 
     if (showContour) {
-      const contourLayers = L.featureGroup(
+      L.featureGroup(
         contours.features.map((contour, i) => {
           return L.polyline(contour.geometry.coordinates as any, {
             color: contoursColors[i],
           }).bindTooltip(`${contour.properties?.z}`);
         })
       ).addTo(map);
-
-      console.log(contourLayers);
     }
 
     // 将 pointsLayer 移动到最上层
     pointLayerRef.current?.bringToFront();
-
-    console.log("[RenderMap] render ends", diff());
   }, [
     center.geometry.coordinates,
     polygons,
