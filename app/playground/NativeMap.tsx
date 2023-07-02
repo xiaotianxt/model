@@ -52,6 +52,9 @@ const Map: React.FC = () => {
     pointColorScaleParam[0],
     pointColorScaleParam[1]
   );
+  const contoursColors = useColorScale(
+    contours.features.map((item) => item.properties?.z ?? 0)
+  );
   const mapRef = useRef<L.Map | null>(null);
   const pointLayerRef = useRef<L.FeatureGroup | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
@@ -59,16 +62,13 @@ const Map: React.FC = () => {
   const renderMap = useCallback(async () => {
     setHoveredPolygon(undefined);
     const diff = timeDiff();
-    console.log("[RenderMap] start", diff());
 
     /** 创建渲染 Map */
     let map: LeafletMap;
     if (mapRef.current) {
-      console.log("[RenderMap] not first render", diff());
       // 非首次渲染，直接使用 ref.current
       map = mapRef.current;
     } else {
-      console.log("[RenderMap] first render", diff());
       // 创建地图实例
       map = L.map("map", {
         center: center.geometry.coordinates as any,
@@ -96,12 +96,10 @@ const Map: React.FC = () => {
       pointsLayer.addTo(map);
       pointLayerRef.current = pointsLayer;
     }
-    console.log("[RenderMap] map created", diff());
 
     // 渲染 polygons
     if (polygonLayerRef.current) {
       map.removeLayer(polygonLayerRef.current);
-      console.log("[RenderMap] remove old polygons", diff());
     }
     const polygonLayers = polygons.features.map((feature, index) => {
       const color = colors[index];
@@ -123,18 +121,34 @@ const Map: React.FC = () => {
       return polygonLayer;
     });
 
-    console.log("[RenderMap] polygons created", diff());
-
     const polygonFeatureGroup = L.featureGroup(polygonLayers).addTo(map);
     polygonLayerRef.current = polygonFeatureGroup;
 
-    console.log("[RenderMap] polygons added to map", diff());
+    if (showContour) {
+      const contourLayers = L.featureGroup(
+        contours.features.map((contour, i) => {
+          return L.polyline(contour.geometry.coordinates as any, {
+            color: contoursColors[i],
+          }).bindTooltip(`${contour.properties?.z}`);
+        })
+      ).addTo(map);
+
+      console.log(contourLayers);
+    }
 
     // 将 pointsLayer 移动到最上层
     pointLayerRef.current?.bringToFront();
 
     console.log("[RenderMap] render ends", diff());
-  }, [center.geometry.coordinates, polygons, colors, pointColors]);
+  }, [
+    center.geometry.coordinates,
+    polygons,
+    colors,
+    pointColors,
+    showContour,
+    contours,
+    contoursColors,
+  ]);
 
   useEffect(() => {
     renderMap();
@@ -148,10 +162,13 @@ const Map: React.FC = () => {
   }, [polygons, colors, center, renderMap]);
 
   return (
-    <>
+    <div className="relative flex h-full">
       <div id="map" style={{ height: "100%", width: "100%" }} />
-      <VectorInfoIndicator hoveredPolygon={hoveredPolygon} />
-    </>
+      <VectorInfoIndicator
+        hoveredPolygon={hoveredPolygon}
+        className="absolute bottom-0 p-2 bg-white"
+      />
+    </div>
   );
 };
 

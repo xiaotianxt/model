@@ -178,15 +178,21 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
         >
           <Switch />
         </Item>
-        <Item label="等值线类型" name="smoothContour" initialValue={false}>
-          <Radio.Group
-            options={[
-              { label: "光滑", value: true },
-              { label: "折线", value: false },
-            ]}
-            disabled={!showContour}
-          ></Radio.Group>
-        </Item>
+        {showContour && (
+          <>
+            <Item label="等值线数量" name="contourCount" initialValue={10}>
+              <Slider min={1} max={20} />
+            </Item>
+            <Item label="等值线类型" name="smoothContour" initialValue={false}>
+              <Radio.Group
+                options={[
+                  { label: "光滑", value: true },
+                  { label: "折线", value: false },
+                ]}
+              ></Radio.Group>
+            </Item>
+          </>
+        )}
       </Form>
     </Card>
   );

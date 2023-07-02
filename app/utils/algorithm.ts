@@ -1,11 +1,14 @@
 import {
   Feature,
   FeatureCollection,
+  featureCollection,
   Point,
   Polygon,
   bbox,
+  center,
+  isolines,
 } from "@turf/turf";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ControlFormValue } from "../playground/ControlPanel";
 import { EAlgorithm } from "../types/enum";
 import { useToggle } from "react-use";
@@ -20,7 +23,7 @@ export type AlgorithmOptions = Pick<
 
 type Properties = {
   [x: string]: number;
-}
+};
 export type ElevationPoint = Feature<Point, Properties>;
 export type ElevationPointCollection = FeatureCollection<Point, Properties>;
 export type ElevationPolygon = Feature<Polygon, Properties>;
@@ -151,7 +154,7 @@ async function interpolateGrid(
           ],
         },
         properties: {
-          [options.property as 'z']: value,
+          [options.property as "z"]: value,
         },
       };
 
@@ -166,7 +169,7 @@ function TIN(
   points: ElevationPointCollection,
   options: AlgorithmOptions
 ): ElevationPolygonCollection {
-  return myTIN(points);
+  return myTIN(points, "z");
 }
 
 export const useAlgorithm = (
@@ -203,10 +206,44 @@ export const useAlgorithm = (
   };
 };
 
+const getBreaks = (
+  points: ElevationPointCollection,
+  n: number,
+  propertyName: string,
+  method: "equal_interval"
+) => {
+  const values = points.features.map((item) => item.properties[propertyName]);
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  const breaks = Array(n)
+    .fill(null)
+    .map((_, i) => {
+      return min + ((max - min) / n) * i;
+    });
+
+  return breaks;
+};
+
 export const useContour = (
-  polygon: FeatureCollection<Polygon, Properties>,
+  polygon: ElevationPolygonCollection,
   smooth: boolean
 ) => {
-  return [];
+  const lines = useMemo(() => {
+    const points = featureCollection(
+      polygon.features.map((item) => {
+        const point = center(item);
+        point.properties = item.properties;
+        return point;
+      })
+    ) as ElevationPointCollection;
+    const breaks = getBreaks(points, 5, "z", "equal_interval");
+    return points.features.length
+      ? isolines(points, breaks, { zProperty: "z" })
+      : featureCollection([]);
+  }, [polygon]);
+
+  return lines;
 };
 export default useAlgorithm;
