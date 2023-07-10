@@ -13,6 +13,8 @@ import { ControlFormValue } from "../playground/ControlPanel";
 import { EAlgorithm } from "../types/enum";
 import { useToggle } from "react-use";
 import myTIN from "./tin";
+import { useConfigStore } from "../store/config";
+import { generateContour } from "./contour";
 
 export type AlgorithmOptions = Pick<
   ControlFormValue,
@@ -206,43 +208,17 @@ export const useAlgorithm = (
   };
 };
 
-const getBreaks = (
-  points: ElevationPointCollection,
-  n: number,
-  propertyName: string,
-  method: "equal_interval"
-) => {
-  const values = points.features.map((item) => item.properties[propertyName]);
-
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-
-  const breaks = Array(n)
-    .fill(null)
-    .map((_, i) => {
-      return min + ((max - min) / n) * i;
-    });
-
-  return breaks;
-};
-
 export const useContour = (
   polygon: ElevationPolygonCollection,
   smooth: boolean
 ) => {
+  const {
+    config: { algorithm, contourCount },
+  } = useConfigStore();
+
   const lines = useMemo(() => {
-    const points = featureCollection(
-      polygon.features.map((item) => {
-        const point = center(item);
-        point.properties = item.properties;
-        return point;
-      })
-    ) as ElevationPointCollection;
-    const breaks = getBreaks(points, 5, "z", "equal_interval");
-    return points.features.length
-      ? isolines(points, breaks, { zProperty: "z" })
-      : featureCollection([]);
-  }, [polygon]);
+    return generateContour(polygon, smooth, algorithm, contourCount);
+  }, [polygon, smooth, algorithm, contourCount]);
 
   return lines;
 };

@@ -1,5 +1,4 @@
-import { IconAdjustmentsAlt } from "@tabler/icons-react";
-import { Card, Drawer, Form, FormProps, Radio, Slider, Switch } from "antd";
+import { Card, Form, FormProps, Radio, Slider, Switch } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import { FC, useCallback, useEffect, useState } from "react";
 import { EAlgorithm } from "../types/enum";
@@ -20,6 +19,7 @@ export interface ControlFormValue {
   showGrid: boolean;
   showContour: boolean;
   smoothContour?: boolean;
+  contourCount?: number;
 }
 
 interface AlgorithmParameterFormProps {
@@ -64,13 +64,7 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({ algorithm }) => {
   );
 
   if (algorithm === EAlgorithm.IRREGULAR_TRIANGLES) {
-    return (
-      <>
-        <Item label="某些参数">
-          <Slider />
-        </Item>
-      </>
-    );
+    return <></>;
   }
 
   const marks: SliderMarks = {
@@ -110,7 +104,11 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({ algorithm }) => {
         />
       </Item>
 
-      <Item label="绑定横纵密度" name="bindHorizationAndVertical">
+      <Item
+        label="绑定横纵密度"
+        name="bindHorizationAndVertical"
+        valuePropName="checked"
+      >
         <Switch onChange={handleBindDensityChange} />
       </Item>
     </>
@@ -172,9 +170,11 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
             ]}
           />
         </Item>
-        <Form.Item label="参数" name="parameter">
-          <AlgorithmParameter algorithm={algorithm} />
-        </Form.Item>
+        {algorithm === EAlgorithm.IRREGULAR_TRIANGLES || (
+          <Form.Item label="参数" name="parameter">
+            <AlgorithmParameter algorithm={algorithm} />
+          </Form.Item>
+        )}
         <Item
           label="显示格网"
           name="showGrid"
