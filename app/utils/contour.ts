@@ -149,10 +149,9 @@ export const generateContour = (
         ? isolines(points, breaks, { zProperty: "z" })
         : featureCollection([]);
     }
-    case EAlgorithm.IRREGULAR_TRIANGLES: {
-      return generateContourFromTIN(polygon, n);
-    }
+    case EAlgorithm.IRREGULAR_TRIANGLES:
     default: {
+      return generateContourFromTIN(polygon, n);
     }
   }
 };
