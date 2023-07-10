@@ -15,7 +15,7 @@ const NativeMap = dynamic(async () => await import("./NativeMap"), {
 export default function Playground() {
   const [configCollapsed, setConfigCollapsed] = useState(false);
   return (
-    <Layout className="h-[100vh]">
+    <Layout className="h-[100vh]" hasSider>
       <Layout>
         <Header className="bg-white shadow-sm">
           <NavigationMenu />
