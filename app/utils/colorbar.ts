@@ -3,7 +3,7 @@ import { scaleLinear } from "d3-scale";
 import { interpolateRgb } from "d3-interpolate";
 
 interface UseColorScaleOptions {
-  colorRange?: [string, string];
+  colorRange?: string[];
 }
 
 function arrayMin(arr: number[]) {

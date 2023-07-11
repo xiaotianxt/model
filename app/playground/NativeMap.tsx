@@ -8,10 +8,10 @@ import useAlgorithm, { ElevationPolygon, useContour } from "../utils/algorithm";
 import { useColorScale } from "../utils/colorbar";
 import { timeDiff } from "../utils/debug";
 
-const pointColorScaleParam = [
-  geodata.features.map((item) => item?.properties?.z),
-  { colorRange: ["#490000", "#F2BFC2"] },
-] as any;
+const POINT_PROPERTIES = geodata.features.map((item) => item?.properties?.z);
+const POINT_COLOR_SCALE = { colorRange: ["#490000", "#F2BFC2"] };
+
+const CONTOUR_COLOR_SCALE = { colorRange: ["#a7f3c9", "#064e34"] };
 
 const VectorInfoIndicator: React.FC<
   React.HTMLAttributes<HTMLDivElement> & {
@@ -23,7 +23,7 @@ const VectorInfoIndicator: React.FC<
 
 const Map: React.FC = () => {
   const {
-    config: { algorithm, parameter, showContour, showGrid, smoothContour },
+    config: { algorithm, parameter, showContour, smoothContour },
   } = useConfigStore();
   const [hoveredPolygon, setHoveredPolygon] = useState<ElevationPolygon>();
 
@@ -52,11 +52,8 @@ const Map: React.FC = () => {
     [contours]
   );
   const colors = useColorScale(polygonProperties);
-  const pointColors = useColorScale(
-    pointColorScaleParam[0],
-    pointColorScaleParam[1]
-  );
-  const contoursColors = useColorScale(contourProperties);
+  const pointColors = useColorScale(POINT_PROPERTIES, POINT_COLOR_SCALE);
+  const contoursColors = useColorScale(contourProperties, CONTOUR_COLOR_SCALE);
   const mapRef = useRef<L.Map | null>(null);
   const pointLayerRef = useRef<L.FeatureGroup | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
