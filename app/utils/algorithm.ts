@@ -5,8 +5,6 @@ import {
   Point,
   Polygon,
   bbox,
-  center,
-  isolines,
 } from "@turf/turf";
 import { useEffect, useMemo, useState } from "react";
 import { ControlFormValue } from "../playground/ControlPanel";
@@ -210,15 +208,20 @@ export const useAlgorithm = (
 
 export const useContour = (
   polygon: ElevationPolygonCollection,
-  smooth: boolean
+  smooth: boolean,
+  showContour: boolean
 ) => {
   const {
     config: { algorithm, contourCount },
   } = useConfigStore();
 
   const lines = useMemo(() => {
-    return generateContour(polygon, smooth, algorithm, contourCount);
-  }, [polygon, smooth, algorithm, contourCount]);
+    if (showContour) {
+      return generateContour(polygon, smooth, algorithm, contourCount);
+    } else {
+      return featureCollection([]);
+    }
+  }, [polygon, smooth, algorithm, contourCount, showContour]);
 
   return lines;
 };

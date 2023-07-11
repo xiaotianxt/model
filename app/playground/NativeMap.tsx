@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L, { Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Feature, centerMean } from "@turf/turf";
+import { centerMean } from "@turf/turf";
 import { geodata } from "../assets";
 import { useConfigStore } from "../store/config";
 import useAlgorithm, { ElevationPolygon, useContour } from "../utils/algorithm";
@@ -38,7 +38,7 @@ const Map: React.FC = () => {
 
   // 计算得到的 polygons
   const { polygons } = useAlgorithm(geodata, option);
-  const contours = useContour(polygons, smoothContour ?? false);
+  const contours = useContour(polygons, smoothContour ?? false, showContour);
   const center = useMemo(() => centerMean(geodata), []);
   const polygonProperties = useMemo(
     () =>
@@ -62,8 +62,9 @@ const Map: React.FC = () => {
   const polygonLayerRef = useRef<L.Layer | null>(null);
 
   const renderMap = useCallback(async () => {
+    const diff = timeDiff();
+    console.log("[Rerender] start", diff());
     setHoveredPolygon(undefined);
-    console.log("[Rerender]");
 
     /** 创建渲染 Map */
     let map: LeafletMap;
@@ -136,6 +137,8 @@ const Map: React.FC = () => {
 
     // 将 pointsLayer 移动到最上层
     pointLayerRef.current?.bringToFront();
+
+    console.log("[Rerender] end", diff());
   }, [
     center.geometry.coordinates,
     polygons,
