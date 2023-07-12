@@ -1,10 +1,21 @@
-import { Card, Form, FormProps, Radio, Slider, Switch } from "antd";
+import {
+  Button,
+  Card,
+  Form,
+  FormProps,
+  Radio,
+  Row,
+  Slider,
+  Space,
+  Switch,
+} from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
-import { FC, useCallback, useEffect, useState } from "react";
-import { EAlgorithm } from "../types/enum";
+import React, { FC, useCallback, useEffect, useState } from "react";
+import { EAlgorithm, EDisplayMode } from "../types/enum";
 import { SliderMarks } from "antd/es/slider";
 import { useDebounce, useToggle } from "react-use";
 import { useConfigStore } from "../store/config";
+import FormItem from "antd/es/form/FormItem";
 
 const Item = Form.Item;
 
@@ -114,14 +125,78 @@ const AlgorithmParameter: FC<AlgorithmParameterFormProps> = ({ algorithm }) => {
   );
 };
 
-const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
+const DISPLAYMODE_STRING = {
+  [EDisplayMode.INTERPOLATION]: "差值",
+  [EDisplayMode.TOPOLOGY]: "拓扑生成",
+};
+
+const DisplayModeControl: FC<{} & React.HTMLAttributes<HTMLFormElement>> = ({
+  ...props
+}) => {
+  const { displayMode, update } = useConfigStore();
+
+  return (
+    <>
+      <Form
+        {...props}
+        onValuesChange={(c) => {
+          update(c);
+        }}
+      >
+        <FormItem label="模式" name="displayMode" initialValue={displayMode}>
+          <Radio.Group buttonStyle="solid">
+            {Object.entries(DISPLAYMODE_STRING).map(([value, label]) => (
+              <Radio.Button key={value} value={value}>
+                {label}
+              </Radio.Button>
+            ))}
+          </Radio.Group>
+        </FormItem>
+      </Form>
+    </>
+  );
+};
+
+const RealControlPanel: FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  ...props
+}) => {
+  const { displayMode } = useConfigStore();
+  return (
+    <Space direction="vertical" className="flex flex-col">
+      <Card>
+        <DisplayModeControl />
+      </Card>
+      {displayMode === EDisplayMode.INTERPOLATION && (
+        <InterpolationControlPanel />
+      )}
+      {displayMode === EDisplayMode.TOPOLOGY && <TopologyControlPanel />}
+    </Space>
+  );
+};
+
+const TopologyControlPanel: FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  ...props
+}) => {
+  const handleDownload = useCallback(() => {
+    alert("download");
+  }, []);
+  return (
+    <Card {...props}>
+      <Button onClick={handleDownload}>下载拓扑模型</Button>
+    </Card>
+  );
+};
+
+const InterpolationControlPanel: FC<Omit<FormProps, "children">> = ({
+  ...props
+}) => {
   const [form] = useForm<ControlFormValue>();
   const [formValues, setFormValues] = useState<ControlFormValue>();
 
   const algorithm = useWatch("algorithm", form);
   const showContour = useWatch("showContour", form);
 
-  const { update, config } = useConfigStore();
+  const { update, config, displayMode } = useConfigStore();
 
   useDebounce(
     () => {
@@ -140,7 +215,7 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
   }, []);
 
   return (
-    <Card className="w-full h-full">
+    <Card>
       <Form
         form={form}
         onValuesChange={(e) => {
@@ -202,4 +277,4 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
   );
 };
 
-export default ControlPanel;
+export default RealControlPanel;
