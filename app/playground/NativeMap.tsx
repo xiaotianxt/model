@@ -10,7 +10,6 @@ import { timeDiff } from "../utils/debug";
 
 const POINT_PROPERTIES = geodata.features.map((item) => item?.properties?.z);
 const POINT_COLOR_SCALE = { colorRange: ["#490000", "#F2BFC2"] };
-
 const CONTOUR_COLOR_SCALE = { colorRange: ["#a7f3c9", "#064e34"] };
 
 const VectorInfoIndicator: React.FC<
@@ -21,13 +20,15 @@ const VectorInfoIndicator: React.FC<
   return <div {...rest}>{JSON.stringify(hoveredPolygon?.properties)}</div>;
 };
 
-const Map: React.FC = () => {
+const useCalculations = () => {
   const {
-    config: { algorithm, parameter, showContour, smoothContour },
+    config: { algorithm, parameter, smoothContour, showContour },
   } = useConfigStore();
-  const [hoveredPolygon, setHoveredPolygon] = useState<ElevationPolygon>();
 
-  const option = useMemo(
+  const center = useMemo(() => centerMean(geodata), []);
+  const pointColors = useColorScale(POINT_PROPERTIES, POINT_COLOR_SCALE);
+
+  const algorithmOption = useMemo(
     () => ({
       property: "z",
       algorithm,
@@ -35,11 +36,7 @@ const Map: React.FC = () => {
     }),
     [algorithm, parameter]
   );
-
-  // 计算得到的 polygons
-  const { polygons } = useAlgorithm(geodata, option);
-  const contours = useContour(polygons, smoothContour ?? false, showContour);
-  const center = useMemo(() => centerMean(geodata), []);
+  const { polygons } = useAlgorithm(geodata, algorithmOption);
   const polygonProperties = useMemo(
     () =>
       polygons.features.map(
@@ -47,13 +44,42 @@ const Map: React.FC = () => {
       ),
     [polygons]
   );
+  const polygonColors = useColorScale(polygonProperties);
+
+  const contours = useContour(polygons, smoothContour ?? false, showContour);
   const contourProperties = useMemo(
     () => contours.features.map((item) => item.properties?.z ?? 0),
     [contours]
   );
-  const colors = useColorScale(polygonProperties);
-  const pointColors = useColorScale(POINT_PROPERTIES, POINT_COLOR_SCALE);
   const contoursColors = useColorScale(contourProperties, CONTOUR_COLOR_SCALE);
+
+  return {
+    center,
+    pointColors,
+    polygons,
+    polygonColors,
+    contours,
+    contoursColors,
+  };
+};
+
+const Map: React.FC = () => {
+  const {
+    config: { showContour },
+  } = useConfigStore();
+  const [hoveredPolygon, setHoveredPolygon] = useState<ElevationPolygon>();
+
+  // 各类运算
+  const {
+    center,
+    pointColors,
+    polygons,
+    polygonColors,
+    contours,
+    contoursColors,
+  } = useCalculations();
+
+  // 地图绘制
   const mapRef = useRef<L.Map | null>(null);
   const pointLayerRef = useRef<L.FeatureGroup | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
@@ -102,7 +128,7 @@ const Map: React.FC = () => {
       map.removeLayer(polygonLayerRef.current);
     }
     const polygonLayers = polygons.features.map((feature, index) => {
-      const color = colors[index];
+      const color = polygonColors[index];
       const polygonLayer = L.polygon(feature.geometry.coordinates as any, {
         color,
         fillColor: color,
@@ -139,9 +165,9 @@ const Map: React.FC = () => {
     console.log("[Rerender] end", diff());
   }, [
     center.geometry.coordinates,
-    polygons,
-    colors,
     pointColors,
+    polygons,
+    polygonColors,
     showContour,
     contours,
     contoursColors,
@@ -156,7 +182,7 @@ const Map: React.FC = () => {
       map?.remove();
       mapRef.current = null;
     };
-  }, [polygons, colors, center, renderMap]);
+  }, [polygons, polygonColors, center, renderMap]);
 
   return (
     <div className="relative flex h-full">

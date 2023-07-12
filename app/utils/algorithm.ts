@@ -223,14 +223,6 @@ export const useContour = (
     }
   }, [polygon, smooth, algorithm, contourCount, showContour]);
 
-  console.log("[useContour]", {
-    polygon,
-    smooth,
-    showContour,
-    lines,
-    algorithm,
-    contourCount,
-  });
   return lines;
 };
 export default useAlgorithm;
