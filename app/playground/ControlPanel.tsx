@@ -16,7 +16,6 @@ interface Parameter {
 export interface ControlFormValue {
   algorithm: EAlgorithm;
   parameter: Parameter;
-  showGrid: boolean;
   showContour: boolean;
   smoothContour?: boolean;
   contourCount?: number;
@@ -175,14 +174,6 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
             <AlgorithmParameter algorithm={algorithm} />
           </Form.Item>
         )}
-        <Item
-          label="显示格网"
-          name="showGrid"
-          valuePropName="checked"
-          initialValue={false}
-        >
-          <Switch />
-        </Item>
         <Item
           label="显示等值线"
           name="showContour"

@@ -14,12 +14,11 @@ export const useConfigStore = create<ConfigValue>((set, get) => ({
       horizontalDensity: 0.5,
       verticalDensity: 0.5,
     },
-    showGrid: false,
     showContour: false,
     smoothContour: false,
   },
   update: (state) => {
-    set(old => {
+    set((old) => {
       return {
         ...old,
         config: {
@@ -28,9 +27,9 @@ export const useConfigStore = create<ConfigValue>((set, get) => ({
           parameter: {
             ...old.config.parameter,
             ...state.config?.parameter,
-          }
-        }
-      }
+          },
+        },
+      };
     });
-  }
-}))
+  },
+}));

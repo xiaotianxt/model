@@ -7,7 +7,6 @@ import NavigationMenu from "./Menu";
 import ControlPanel from "./ControlPanel";
 import Sider from "antd/es/layout/Sider";
 
-const DynamicMap = dynamic(async () => await import("./Map"), { ssr: false });
 const NativeMap = dynamic(async () => await import("./NativeMap"), {
   ssr: false,
 });
