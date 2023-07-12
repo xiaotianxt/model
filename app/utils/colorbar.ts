@@ -3,7 +3,7 @@ import { scaleLinear } from "d3-scale";
 import { interpolateRgb } from "d3-interpolate";
 
 interface UseColorScaleOptions {
-  colorRange?: string[];
+  colorRange: string[];
 }
 
 function arrayMin(arr: number[]) {
@@ -30,10 +30,10 @@ function arrayMax(arr: number[]) {
 
 export const useColorScale = (
   values: number[],
-  options?: UseColorScaleOptions
+  options: UseColorScaleOptions
 ): string[] => {
   const colorScale = useMemo(() => {
-    const { colorRange = ["#265364", "#cbeef3"] } = options || {};
+    const { colorRange } = options;
     const min = arrayMin(values);
     const max = arrayMax(values);
 

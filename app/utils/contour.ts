@@ -1,9 +1,8 @@
 import {
   Feature,
   FeatureCollection,
-  LineString,
+  MultiLineString,
   Position,
-  Properties,
   center,
   feature,
   featureCollection,
@@ -16,6 +15,11 @@ import {
   ElevationPolygon,
   ElevationPolygonCollection,
 } from "./algorithm";
+
+export type ContourLineCollections = FeatureCollection<
+  MultiLineString,
+  { z: number }
+>;
 
 function approximate(position: Position): string {
   const precision = 5; // 根据实际需求设定精度
@@ -161,7 +165,10 @@ const reorderSegments: (segments: Position[][]) => Position[][] = (
       // 更新当前点为下一个点
       currentPointString = nextPointString;
     }
-    polylines.push(polyline);
+
+    if (polyline.length > 1) {
+      polylines.push(polyline);
+    }
   }
 
   return polylines;
@@ -187,7 +194,7 @@ const generateContourFromTIN = (
     }) as ElevationPoint[]
   );
   const breaks = getBreaks(points, n, "z", "equal_interval");
-  const contours: Feature<LineString>[] = [];
+  const contours: Feature<MultiLineString>[] = [];
 
   for (const interval of breaks) {
     const segments = [];
@@ -200,22 +207,20 @@ const generateContourFromTIN = (
     // 拼装交线
     const lineStrings = reorderSegments(segments);
 
-    const lines = lineStrings.map((lineString) =>
-      feature<LineString>(
-        {
-          type: "LineString",
-          coordinates: lineString,
-        },
-        {
-          z: interval,
-        }
-      )
+    const lines = feature<MultiLineString>(
+      {
+        type: "MultiLineString",
+        coordinates: lineStrings,
+      },
+      {
+        z: interval,
+      }
     );
 
-    contours.splice(contours.length, 0, ...lines);
+    contours.push(lines);
   }
 
-  return featureCollection(contours);
+  return featureCollection(contours) as ContourLineCollections;
 };
 
 export const generateContour = (
@@ -239,7 +244,7 @@ export const generateContour = (
         points.features.length
           ? isolines(points, breaks, { zProperty: "z" })
           : featureCollection([])
-      ) as FeatureCollection<LineString>;
+      ) as ContourLineCollections;
       return smooth ? smoothContourLines(result) : result;
     }
     case EAlgorithm.IRREGULAR_TRIANGLES:
@@ -249,7 +254,9 @@ export const generateContour = (
     }
   }
 };
-function smoothContourLines(result: FeatureCollection<LineString, Properties>) {
+function smoothContourLines(
+  result: ContourLineCollections
+): ContourLineCollections {
   const smoothLine = (positions: Position[]) => {
     const windowSize = 2;
 
@@ -285,9 +292,9 @@ function smoothContourLines(result: FeatureCollection<LineString, Properties>) {
       const { geometry, properties } = item;
       const newGeometry = {
         ...geometry,
-        coordinates: smoothLine(geometry.coordinates),
+        coordinates: geometry.coordinates.map((item) => smoothLine(item)),
       };
-      return feature<LineString>(newGeometry, properties);
+      return feature<MultiLineString>(newGeometry, properties);
     })
-  );
+  ) as ContourLineCollections;
 }

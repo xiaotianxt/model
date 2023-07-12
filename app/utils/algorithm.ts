@@ -12,7 +12,7 @@ import { EAlgorithm } from "../types/enum";
 import { useToggle } from "react-use";
 import myTIN from "./tin";
 import { useConfigStore } from "../store/config";
-import { generateContour } from "./contour";
+import { ContourLineCollections, generateContour } from "./contour";
 
 export type AlgorithmOptions = Pick<
   ControlFormValue,
@@ -223,6 +223,6 @@ export const useContour = (
     }
   }, [polygon, smooth, algorithm, contourCount, showContour]);
 
-  return lines;
+  return lines as ContourLineCollections;
 };
 export default useAlgorithm;

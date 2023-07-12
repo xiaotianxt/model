@@ -9,8 +9,9 @@ import { useColorScale } from "../utils/colorbar";
 import { timeDiff } from "../utils/debug";
 
 const POINT_PROPERTIES = geodata.features.map((item) => item?.properties?.z);
-const POINT_COLOR_SCALE = { colorRange: ["#490000", "#F2BFC2"] };
-const CONTOUR_COLOR_SCALE = { colorRange: ["#a7f3c9", "#064e34"] };
+const POINT_COLOR_SCALE = { colorRange: ["#7f1d1d", "#fca5a5"] };
+const CONTOUR_COLOR_SCALE = { colorRange: ["#134e4a", "#86efac"] };
+const POLYGON_COLOR_SCALE = { colorRange: ["#1e3a8a", "#93c5fd"] };
 
 const VectorInfoIndicator: React.FC<
   React.HTMLAttributes<HTMLDivElement> & {
@@ -44,7 +45,7 @@ const useCalculations = () => {
       ),
     [polygons]
   );
-  const polygonColors = useColorScale(polygonProperties);
+  const polygonColors = useColorScale(polygonProperties, POLYGON_COLOR_SCALE);
 
   const contours = useContour(polygons, smoothContour ?? false, showContour);
   const contourProperties = useMemo(
