@@ -123,13 +123,14 @@ const Map: React.FC = () => {
     polygonLayerRef.current = polygonFeatureGroup;
 
     if (showContour) {
+      console.log("[renderMap] showContour", contours);
       L.featureGroup(
         contours.features.map((contour, i) => {
           return L.polyline(contour.geometry.coordinates as any, {
             color: contoursColors[i],
           }).bindTooltip(`${contour.properties?.z}`);
         })
-      ).addTo(map);
+      )?.addTo(map);
     }
 
     // 将 pointsLayer 移动到最上层

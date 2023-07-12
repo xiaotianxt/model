@@ -1,7 +1,9 @@
 import {
   Feature,
+  FeatureCollection,
   LineString,
   Position,
+  Properties,
   center,
   feature,
   featureCollection,
@@ -205,7 +207,7 @@ const generateContourFromTIN = (
           coordinates: lineString,
         },
         {
-          elevation: interval,
+          z: interval,
         }
       )
     );
@@ -233,13 +235,59 @@ export const generateContour = (
         })
       ) as ElevationPointCollection;
       const breaks = getBreaks(points, n, "z", "equal_interval");
-      return points.features.length
-        ? isolines(points, breaks, { zProperty: "z" })
-        : featureCollection([]);
+      const result = (
+        points.features.length
+          ? isolines(points, breaks, { zProperty: "z" })
+          : featureCollection([])
+      ) as FeatureCollection<LineString>;
+      return smooth ? smoothContourLines(result) : result;
     }
     case EAlgorithm.IRREGULAR_TRIANGLES:
     default: {
-      return generateContourFromTIN(polygon, n);
+      const result = generateContourFromTIN(polygon, n);
+      return smooth ? smoothContourLines(result) : result;
     }
   }
 };
+function smoothContourLines(result: FeatureCollection<LineString, Properties>) {
+  const smoothLine = (positions: Position[]) => {
+    const windowSize = 2;
+
+    const smoothedPoints = [positions[0]];
+    const halfWindowSize = Math.floor(windowSize / 2);
+
+    // 将每个点的值设置为其在窗口内的所有点的平均值
+    for (let i = 1; i < positions.length - 1; i++) {
+      let sumX = 0;
+      let sumY = 0;
+      let count = 0;
+
+      // 计算在窗口范围内的所有点的值
+      for (
+        let j = Math.max(0, i - halfWindowSize);
+        j <= Math.min(positions.length - 1, i + halfWindowSize);
+        j++
+      ) {
+        sumX += positions[j][0];
+        sumY += positions[j][1];
+        count++;
+      }
+
+      // 计算平均值，并将其添加到新的点列表中
+      smoothedPoints.push([sumX / count, sumY / count]);
+    }
+    smoothedPoints.push(positions[positions.length - 1]);
+
+    return smoothedPoints;
+  };
+  return featureCollection(
+    result.features.map((item) => {
+      const { geometry, properties } = item;
+      const newGeometry = {
+        ...geometry,
+        coordinates: smoothLine(geometry.coordinates),
+      };
+      return feature<LineString>(newGeometry, properties);
+    })
+  );
+}
