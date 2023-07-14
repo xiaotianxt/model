@@ -7,8 +7,6 @@ import { useConfigStore } from "../store/config";
 import useAlgorithm, { ElevationPolygon, useContour } from "../utils/algorithm";
 import { useColorScale } from "../utils/colorbar";
 import { timeDiff } from "../utils/debug";
-import useTopology from "../utils/topology";
-import { EDisplayMode } from "../types/enum";
 
 const POINT_PROPERTIES = geodata.features.map((item) => item?.properties?.z);
 const POINT_COLOR_SCALE = { colorRange: ["#7f1d1d", "#fca5a5"] };
@@ -25,7 +23,6 @@ const VectorInfoIndicator: React.FC<
 
 const useCalculations = () => {
   const {
-    displayMode,
     config: { algorithm, parameter, smoothContour, showContour },
   } = useConfigStore();
 
@@ -50,18 +47,12 @@ const useCalculations = () => {
   );
   const polygonColors = useColorScale(polygonProperties, POLYGON_COLOR_SCALE);
 
-  const contours = useContour(
-    polygons,
-    smoothContour ?? false,
-    displayMode === EDisplayMode.TOPOLOGY || showContour
-  );
+  const contours = useContour(polygons, smoothContour ?? false, showContour);
   const contourProperties = useMemo(
     () => contours.features.map((item) => item.properties?.z ?? 0),
     [contours]
   );
   const contoursColors = useColorScale(contourProperties, CONTOUR_COLOR_SCALE);
-
-  const topology = useTopology(polygons, contours);
 
   return {
     center,
@@ -70,13 +61,11 @@ const useCalculations = () => {
     polygonColors,
     contours,
     contoursColors,
-    topology,
   };
 };
 
 const Map: React.FC = () => {
   const {
-    displayMode,
     config: { showContour },
   } = useConfigStore();
   const [hoveredPolygon, setHoveredPolygon] = useState<ElevationPolygon>();
@@ -89,14 +78,12 @@ const Map: React.FC = () => {
     polygonColors,
     contours,
     contoursColors,
-    topology,
   } = useCalculations();
 
   // 地图绘制
   const mapRef = useRef<L.Map | null>(null);
   const pointLayerRef = useRef<L.FeatureGroup | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
-  const topologyLayerRef = useRef<L.Layer | null>(null);
 
   const renderMap = useCallback(async () => {
     const diff = timeDiff();
@@ -138,54 +125,37 @@ const Map: React.FC = () => {
     }
 
     // 渲染 polygons
-    if (displayMode === EDisplayMode.INTERPOLATION) {
-      if (polygonLayerRef.current) {
-        map.removeLayer(polygonLayerRef.current);
-      }
-      const polygonLayers = polygons.features.map((feature, index) => {
-        const color = polygonColors[index];
-        const polygonLayer = L.polygon(feature.geometry.coordinates as any, {
-          color,
-          fillColor: color,
-          fillOpacity: 0.8,
-          stroke: false,
+    if (polygonLayerRef.current) {
+      map.removeLayer(polygonLayerRef.current);
+    }
+    const polygonLayers = polygons.features.map((feature, index) => {
+      const color = polygonColors[index];
+      const polygonLayer = L.polygon(feature.geometry.coordinates as any, {
+        color,
+        fillColor: color,
+        fillOpacity: 0.8,
+        stroke: false,
+      })
+        .addEventListener("mouseover", (e) => {
+          e.target.setStyle({ fillOpacity: 1 });
+          setHoveredPolygon(feature);
         })
-          .addEventListener("mouseover", (e) => {
-            e.target.setStyle({ fillOpacity: 1 });
-            setHoveredPolygon(feature);
-          })
-          .addEventListener("mouseout", (e) => {
-            e.target.setStyle({ fillOpacity: 0.8 });
-          });
-        return polygonLayer;
-      });
+        .addEventListener("mouseout", (e) => {
+          e.target.setStyle({ fillOpacity: 0.8 });
+        });
+      return polygonLayer;
+    });
 
-      const polygonFeatureGroup = L.featureGroup(polygonLayers).addTo(map);
-      polygonLayerRef.current = polygonFeatureGroup;
+    const polygonFeatureGroup = L.featureGroup(polygonLayers).addTo(map);
+    polygonLayerRef.current = polygonFeatureGroup;
 
-      if (showContour) {
-        console.log("[renderMap] showContour", contours);
-        L.featureGroup(
-          contours.features.map((contour, i) => {
-            return L.polyline(contour.geometry.coordinates as any, {
-              color: contoursColors[i],
-            }).bindTooltip(`${contour.properties?.z}`);
-          })
-        )?.addTo(map);
-      }
-    } else if (displayMode === EDisplayMode.TOPOLOGY) {
+    if (showContour) {
+      console.log("[renderMap] showContour", contours);
       L.featureGroup(
-        topology.polygon.features.map((feature, i) => {
-          return L.polygon(feature.geometry.coordinates as any, {
-            color: feature.properties.color,
-          });
-        })
-      )?.addTo(map);
-      L.featureGroup(
-        topology.segments.features.map((feature, i) => {
-          return L.polyline(feature.geometry.coordinates as any, {
-            color: "red",
-          });
+        contours.features.map((contour, i) => {
+          return L.polyline(contour.geometry.coordinates as any, {
+            color: contoursColors[i],
+          }).bindTooltip(`${contour.properties?.z}`);
         })
       )?.addTo(map);
     }
@@ -202,8 +172,6 @@ const Map: React.FC = () => {
     showContour,
     contours,
     contoursColors,
-    topology,
-    displayMode,
   ]);
 
   useEffect(() => {
