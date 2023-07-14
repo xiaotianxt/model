@@ -1,4 +1,4 @@
-import { Card, Form, FormProps, Radio, Slider, Switch } from "antd";
+import { Button, Card, Form, FormProps, Radio, Slider, Switch } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import { FC, useCallback, useEffect, useState } from "react";
 import { EAlgorithm } from "../types/enum";
@@ -139,6 +139,14 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleDownload = useCallback(() => {
+    // 下载一个文件，链接是 "/arcs.txt"
+    const a = document.createElement("a");
+    a.href = "/result.txt";
+    a.download = "result.txt";
+    a.click();
+  }, []);
+
   return (
     <Card className="w-full h-full">
       <Form
@@ -198,6 +206,7 @@ const ControlPanel: FC<Omit<FormProps, "children">> = ({ ...props }) => {
           </>
         )}
       </Form>
+      <Button onClick={handleDownload}>下载拓扑模型</Button>
     </Card>
   );
 };
